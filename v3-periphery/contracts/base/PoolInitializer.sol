@@ -8,6 +8,10 @@ import './PeripheryImmutableState.sol';
 import '../interfaces/IPoolInitializer.sol';
 
 /// @title Creates and initializes V3 Pools
+/**
+ * 调用IUniswapV3Factory.getPool() 判断流动池是否创建, 如果没创建则调用
+ IUniswapV3Factory.createPool() 创建流动池
+ */
 abstract contract PoolInitializer is IPoolInitializer, PeripheryImmutableState {
     /// @inheritdoc IPoolInitializer
     function createAndInitializePoolIfNecessary(

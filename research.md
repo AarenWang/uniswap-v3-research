@@ -1,31 +1,45 @@
+### uniswap 版本功能变迁
+V1版本
+1. 只支持ETH到ERC20,简单,但是token A到token B两次兑换手续费和gas费
+
+V2版本
+1. 支持任意ERC20 Token对
+2. 基于时间权重链上预言机 TWAP  时间均价代替实时价格
+3. 闪电兑换 Flash Swap
+
+
+V3版本
+1. 聚焦流动性 更高效率的资金使用
+2. virtual reserver
+3. 新的价格计算机制
+
 
 ### 功能和用例
 流动性管理
-  流动池列表
-
-  流动池查看
-
-   创建池
-
-   添加流动性
-
-   删除流动性
+  - 流动池列表
+  - 流动池查看
+  - 创建池
+  - 添加流动性
+  - 删除流动性
 
 兑换
-  
+ - 计算兑换价格
+ - 执行兑换
+
 
 ### 合约
 Uniswap v3 在代码层面的架构和 v2 基本保持一致，将合约分成了两个仓库
-- uniswap-v3-core
+- uniswap-v3-core 
 - uniswap-v3-periphery
 
 core 仓库的功能主要包含在以下 2 个合约中：
-- UniswapV3Factory: 提供创建 pool 的接口，并且追踪所有的 pool
-- UniswapV3Pool: 实现代币交易，流动性管理，交易手续费的收取，oracle 数据管理。接口的实现粒度比较低，不适合普通用户使用，错误的调用其中的接口可能会造成经济上的损失。
+- **UniswapV3Factory**: 提供创建 pool 的接口，并且追踪所有的 pool
+- **UniswapV3Pool**: 实现代币交易，流动性管理，交易手续费的收取，oracle 数据管理。接口的实现粒度比较低，不适合普通用户使用，错误的调用其中的接口可能会造成经济上的损失。
 
 peirphery 仓库的功能主要包含在以下 2 个合约：
-- SwapRouter: 提供代币交易的接口，它是对 UniswapV3Pool 合约中交易相关接口的进一步封装，前端界面主要与这个合约来进行对接。
-- NonfungiblePositionManager: 用来增加/移除/修改 Pool 的流动性，并且通过 NFT token 将流动性代币化。使用 ERC721 token（v2 使用的是 ERC20）的原因是同一个池的多个流动性并不能等价替换（v3 的集中流性动功能）
+- **SwapRouter**: 提供代币交易的接口，它是对 UniswapV3Pool 合约中交易相关接口的进一步封装，前端界面主要与这个合约来进行对接。
+- **NonfungiblePositionManager**: 用来增加/移除/修改 Pool 的流动性，并且通过 NFT token 将流动性代币化。使用 ERC721 token（v2 使用的是 ERC20）的原因是同一个池的多个流动性并不能等价替换（v3 的集中流性动功能）
+
 大致关系
 ![合约关系](https://liaoph.com/img/in-post/uniswap-v3/contracts.webp)
 
@@ -47,7 +61,7 @@ peirphery 仓库的功能主要包含在以下 2 个合约：
 | V3Migrator                         | `0xA5644E29708357803b5A882D272c41cC0dF92B34` | https://github.com/Uniswap/uniswap-v3-periphery/blob/v1.0.0/contracts/V3Migrator.sol                                          |
 
 
-**合约描述** 
+**合约功能概述** 
 #### TickLens
 Tick 刻度  创建流动池子,选择价格区间,比如价格区间是90到110, 在这个价格区间里,实际swap时候不是任意数字都可以,而是一系列的离散数字,采用了等比数列的形式确定价格数列，公比为 1.0001。即下一个价格点为当前价格点的 100.01%，
 
@@ -63,14 +77,14 @@ Tick 刻度  创建流动池子,选择价格区间,比如价格区间是90到110
 | UniswapV3Factory                   | 部署v3流动池子,管理所有者 控制池子费用                                                                                                                                             |
 | Multicall2                         | 创建流动性池, 需要多次调用合约,通过先调用Multicall2合约,由Multicall2调用多个合约                                                                                                       |
 | ProxyAdmin                         |                                                                                                                                                                              |
-| TickLens                           |                                                                                                                                                                              |
+| TickLens                           | 管理价格区间刻度                                                                                                                                                                             |
 | Quoter                             |                                                                                                                                                                              |
-| SwapRouter                         |                                                                                                                                                                              |
+| SwapRouter                         | 执行兑换                                                                                                                                                                             |
 | NFTDescriptor                      |                                                                                                                                                                              |
 | NonfungibleTokenPositionDescriptor |                                                                                                                                                                              |
 | TransparentUpgradeableProxy        |                                                                                                                                                                              |
-| NonfungiblePositionManager         |                                                                                                                                                                              |
-| V3Migrator                         |                                                                                                                                                                              |
+| NonfungiblePositionManager         | 仓位管理,前端流动性操作与该合约交互                                                                                                                                                       |
+| V3Migrator                         | 迁移V2版本流动性到V3版本                                                                                                                                                                             |
 
 
 ### 辅助合约代码阅读分析
@@ -261,21 +275,43 @@ function addLiquidity(AddLiquidityParams memory params)
 
 #### 预言机
 
-#### 闪电兑
+#### 闪电贷
 
 
 ### 技术问题
-#### creat2指令创建可预测地址的合约
 
-#### 各种位数数字
+#### 数学运算和技巧
 
-#### 数学库
 
 #### multicall
+通常一次合约调用只能调用一个方法,如何突破这个限制? 部署一个```multicall```合约,外部账户EOA先调用```multicall```,```multicall```然后调用多个不同合约
+```multicall```合约方法如下
+```
+ function multicall(bytes[] calldata data) public payable override returns (bytes[] memory results) {
+        results = new bytes[](data.length);
+        for (uint256 i = 0; i < data.length; i++) {
+            (bool success, bytes memory result) = address(this).delegatecall(data[i]);
+
+            if (!success) {
+                // Next 5 lines from https://ethereum.stackexchange.com/a/83577
+                if (result.length < 68) revert();
+                assembly {
+                    result := add(result, 0x04)
+                }
+                revert(abi.decode(result, (string)));
+            }
+
+            results[i] = result;
+        }
+    }
+```
+
 
 #### abi encode  decode
 
+
 ### 彩蛋
+
 
 #### 仓位 NFT
 [Uniswap V3 Positions](https://opensea.io/collection/uniswap-v3-positions)
@@ -283,6 +319,10 @@ function addLiquidity(AddLiquidityParams memory params)
 
 
 ### 附录
+#### 参考文档
+uniswap v3部署体验 [链接](https://daoleno.com/uniswapv3-deployment-guide/)
+
+
 ####  代码量统计
 
 ```
