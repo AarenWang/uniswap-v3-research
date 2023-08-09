@@ -84,6 +84,10 @@ contract SwapRouter is
     }
 
     /// @dev Performs a single exact input swap
+    /// @param amountIn 输入数量
+    /// @param amountIn 输出token接收地址
+    /// @param sqrtPriceLimitX96
+    /// @param data 回调数据
     function exactInputInternal(
         uint256 amountIn,
         address recipient,
@@ -112,6 +116,9 @@ contract SwapRouter is
     }
 
     /// @inheritdoc ISwapRouter
+    /**
+     * 精确输入
+     */
     function exactInputSingle(ExactInputSingleParams calldata params)
         external
         payable
@@ -200,6 +207,7 @@ contract SwapRouter is
     }
 
     /// @inheritdoc ISwapRouter
+    /// 
     function exactOutputSingle(ExactOutputSingleParams calldata params)
         external
         payable

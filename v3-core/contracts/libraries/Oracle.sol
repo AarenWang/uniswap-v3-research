@@ -3,12 +3,14 @@ pragma solidity >=0.5.0 <0.8.0;
 
 /// @title Oracle
 /// @notice Provides price and liquidity data useful for a wide variety of system designs
+/// @notice 提供价格和流动性舒俊
 /// @dev Instances of stored oracle data, "observations", are collected in the oracle array
 /// Every pool is initialized with an oracle array length of 1. Anyone can pay the SSTOREs to increase the
 /// maximum length of the oracle array. New slots will be added when the array is fully populated.
 /// Observations are overwritten when the full length of the oracle array is populated.
 /// The most recent observation is available, independent of the length of the oracle array, by passing 0 to observe()
 library Oracle {
+    ///@dev 预言机数组存放的实例
     struct Observation {
         // the block timestamp of the observation
         uint32 blockTimestamp;
@@ -37,14 +39,15 @@ library Oracle {
         return
             Observation({
                 blockTimestamp: blockTimestamp,
-                tickCumulative: last.tickCumulative + int56(tick) * delta,
-                secondsPerLiquidityCumulativeX128: last.secondsPerLiquidityCumulativeX128 +
+                tickCumulative: last.tickCumulative + int56(tick) * delta, //tick累计值计算： 旧值+新的tick * 增加的秒数
+                secondsPerLiquidityCumulativeX128: last.secondsPerLiquidityCumulativeX128 + //流动性累计值为倒数相加（为啥是倒数）
                     ((uint160(delta) << 128) / (liquidity > 0 ? liquidity : 1)),
                 initialized: true
             });
     }
 
     /// @notice Initialize the oracle array by writing the first slot. Called once for the lifecycle of the observations array
+    /// @notice 初始化oracle数组，然后设置第一个元素
     /// @param self The stored oracle array
     /// @param time The time of the oracle initialization, via block.timestamp truncated to uint32
     /// @return cardinality The number of populated elements in the oracle array
@@ -67,13 +70,13 @@ library Oracle {
     /// If the index is at the end of the allowable array length (according to cardinality), and the next cardinality
     /// is greater than the current one, cardinality may be increased. This restriction is created to preserve ordering.
     /// @param self The stored oracle array
-    /// @param index The index of the observation that was most recently written to the observations array
+    /// @param index The index of the observation that was most recently written to the observations array,最近一次写的索引位置
     /// @param blockTimestamp The timestamp of the new observation
     /// @param tick The active tick at the time of the new observation
     /// @param liquidity The total in-range liquidity at the time of the new observation
-    /// @param cardinality The number of populated elements in the oracle array
-    /// @param cardinalityNext The new length of the oracle array, independent of population
-    /// @return indexUpdated The new index of the most recently written element in the oracle array
+    /// @param cardinality The number of populated elements in the oracle array  数组元素当前索引
+    /// @param cardinalityNext The new length of the oracle array, independent of population  数组元素下一次写的索引
+    /// @return indexUpdated The new index of the most recently written element in the oracle array  新元素在数组的索引值
     /// @return cardinalityUpdated The new cardinality of the oracle array
     function write(
         Observation[65535] storage self,
@@ -87,6 +90,7 @@ library Oracle {
         Observation memory last = self[index];
 
         // early return if we've already written an observation this block
+        // 保证一个区块只写一次
         if (last.blockTimestamp == blockTimestamp) return (index, cardinality);
 
         // if the conditions are right, we can bump the cardinality

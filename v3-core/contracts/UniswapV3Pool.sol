@@ -53,10 +53,13 @@ contract UniswapV3Pool is IUniswapV3Pool, NoDelegateCall {
     /// @inheritdoc IUniswapV3PoolImmutables
     uint128 public immutable override maxLiquidityPerTick;
 
+    ///@dev 
     struct Slot0 {
         // the current price
+        // 当前价格
         uint160 sqrtPriceX96;
         // the current tick
+        //当前Tick 索引位置
         int24 tick;
         // the most-recently updated index of the observations array
         uint16 observationIndex;
@@ -66,6 +69,7 @@ contract UniswapV3Pool is IUniswapV3Pool, NoDelegateCall {
         uint16 observationCardinalityNext;
         // the current protocol fee as a percentage of the swap fee taken on withdrawal
         // represented as an integer denominator (1/x)%
+        //协议费率占比 
         uint8 feeProtocol;
         // whether the pool is locked
         bool unlocked;
@@ -74,8 +78,10 @@ contract UniswapV3Pool is IUniswapV3Pool, NoDelegateCall {
     Slot0 public override slot0;
 
     /// @inheritdoc IUniswapV3PoolState
+    /// @dev global state  单位流动性 token0历史累计手续费
     uint256 public override feeGrowthGlobal0X128;
     /// @inheritdoc IUniswapV3PoolState
+    /// @dev global state 单位流动性 token1历史累计手续费
     uint256 public override feeGrowthGlobal1X128;
 
     // accumulated protocol fees in token0/token1 units
@@ -84,14 +90,18 @@ contract UniswapV3Pool is IUniswapV3Pool, NoDelegateCall {
         uint128 token1;
     }
     /// @inheritdoc IUniswapV3PoolState
+    // 协议手续费占比
     ProtocolFees public override protocolFees;
 
     /// @inheritdoc IUniswapV3PoolState
+    /// @dev global state 流动性
     uint128 public override liquidity;
 
     /// @inheritdoc IUniswapV3PoolState
+    /// 
     mapping(int24 => Tick.Info) public override ticks;
     /// @inheritdoc IUniswapV3PoolState
+    /// @dev 为了更高效寻找下一个已初始化的tick，合约使用一个位图tickBitmap记录已初始化的tick。如果tick已被初始化，位图中对应于该tick序号的位置设置为1，否则为0
     mapping(int16 => uint256) public override tickBitmap;
     /// @inheritdoc IUniswapV3PoolState
     mapping(bytes32 => Position.Info) public override positions;
@@ -119,6 +129,7 @@ contract UniswapV3Pool is IUniswapV3Pool, NoDelegateCall {
         (factory, token0, token1, fee, _tickSpacing) = IUniswapV3PoolDeployer(msg.sender).parameters();
         tickSpacing = _tickSpacing;
 
+        // 
         maxLiquidityPerTick = Tick.tickSpacingToMaxLiquidityPerTick(_tickSpacing);
     }
 
@@ -593,6 +604,7 @@ contract UniswapV3Pool is IUniswapV3Pool, NoDelegateCall {
     }
 
     /// @inheritdoc IUniswapV3PoolActions
+    ///@dev 
     function swap(
         address recipient,
         bool zeroForOne,
@@ -845,6 +857,8 @@ contract UniswapV3Pool is IUniswapV3Pool, NoDelegateCall {
     }
 
     /// @inheritdoc IUniswapV3PoolOwnerActions
+    /// @dev 收取手续费
+    /// @notice protocolFees应该是一个mapping，key是地址，value是protocolFee Struct， 为啥直接是一个struct？ 
     function collectProtocol(
         address recipient,
         uint128 amount0Requested,

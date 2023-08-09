@@ -24,12 +24,15 @@ library Tick {
         uint256 feeGrowthOutside0X128;
         uint256 feeGrowthOutside1X128;
         // the cumulative tick value on the other side of the tick
+        ///@dev for external,Such as LP Mining
         int56 tickCumulativeOutside;
         // the seconds per unit of liquidity on the _other_ side of this tick (relative to the current tick)
         // only has relative meaning, not absolute — the value depends on when the tick is initialized
+        ///@dev for external,Such as LP Mining
         uint160 secondsPerLiquidityOutsideX128;
         // the seconds spent on the other side of the tick (relative to the current tick)
         // only has relative meaning, not absolute — the value depends on when the tick is initialized
+        ///@dev for external,Such as LP Mining
         uint32 secondsOutside;
         // true iff the tick is initialized, i.e. the value is exactly equivalent to the expression liquidityGross != 0
         // these 8 bits are set to prevent fresh sstores when crossing newly initialized ticks
