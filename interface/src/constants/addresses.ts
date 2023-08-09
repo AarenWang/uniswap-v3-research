@@ -89,6 +89,7 @@ export const NONFUNGIBLE_POSITION_MANAGER_ADDRESSES: AddressMap = constructSameA
     SupportedChainId.ARBITRUM_RINKEBY,
     SupportedChainId.POLYGON_MUMBAI,
     SupportedChainId.POLYGON,
+    SupportedChainId.GOERLI,
   ]
 )
 export const ENS_REGISTRAR_ADDRESSES: AddressMap = {
@@ -101,14 +102,20 @@ export const SOCKS_CONTROLLER_ADDRESSES: AddressMap = {
   [SupportedChainId.MAINNET]: '0x65770b5283117639760beA3F867b69b3697a91dd',
 }
 
-export const V3_MIGRATOR_ADDRESSES: AddressMap = constructSameAddressMap('0xA5644E29708357803b5A882D272c41cC0dF92B34', [
-  SupportedChainId.ARBITRUM_ONE,
-  SupportedChainId.ARBITRUM_RINKEBY,
-  SupportedChainId.POLYGON_MUMBAI,
-  SupportedChainId.POLYGON,
+// export const V3_MIGRATOR_ADDRESSES: AddressMap = constructSameAddressMap('0xA5644E29708357803b5A882D272c41cC0dF92B34', [
+//   SupportedChainId.ARBITRUM_ONE,
+//   SupportedChainId.ARBITRUM_RINKEBY,
+//   SupportedChainId.POLYGON_MUMBAI,
+//   SupportedChainId.POLYGON,
+//   SupportedChainId.GOERLI,
+// ])
+
+export const V3_MIGRATOR_ADDRESSES: AddressMap = constructSameAddressMap('0x00A166F668119fbb3f21e7c461aBA8F6d70ab0d3', [
+  SupportedChainId.GOERLI,
 ])
 
 export const TICK_LENS_ADDRESSES: AddressMap = {
   [SupportedChainId.ARBITRUM_ONE]: '0xbfd8137f7d1516D3ea5cA83523914859ec47F573',
   [SupportedChainId.ARBITRUM_RINKEBY]: '0xbfd8137f7d1516D3ea5cA83523914859ec47F573',
+  [SupportedChainId.GOERLI]: '0x69778705930Cfa0f266Da72351562F0759aa84E7',
 }

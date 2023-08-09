@@ -20,9 +20,7 @@ import './base/PoolInitializer.sol';
 
 /// @title NFT positions
 /// @notice Wraps Uniswap V3 positions in the ERC721 non-fungible token interface
-/**
- * 前端通过与该合约交互 调用core的Pool合约完成仓位管理,问题 为啥仓位会有NFT
- */
+///@dev 前端通过与该合约交互 调用core的Pool合约完成仓位管理
 contract NonfungiblePositionManager is
     INonfungiblePositionManager,
     Multicall,
@@ -39,9 +37,11 @@ contract NonfungiblePositionManager is
         // the nonce for permits
         // nonce用来做什么? 
         uint96 nonce;
+        
         // the address that is approved for spending this token
         address operator;
         // the ID of the pool with which this token is connected
+        // 池子ID
         uint80 poolId;
         // the tick range of the position
         //价格刻度下限和上限
@@ -55,6 +55,7 @@ contract NonfungiblePositionManager is
         uint256 feeGrowthInside0LastX128;
         uint256 feeGrowthInside1LastX128;
         // how many uncollected tokens are owed to the position, as of the last computation
+        //未领取的手续费
         uint128 tokensOwed0;
         uint128 tokensOwed1;
     }
@@ -238,7 +239,7 @@ contract NonfungiblePositionManager is
 
         // this is now updated to the current transaction
         (, uint256 feeGrowthInside0LastX128, uint256 feeGrowthInside1LastX128, , ) = pool.positions(positionKey);
-
+        //计算当前仓位未领取token0和token1数量
         position.tokensOwed0 += uint128(
             FullMath.mulDiv(
                 feeGrowthInside0LastX128 - position.feeGrowthInside0LastX128,
@@ -246,6 +247,7 @@ contract NonfungiblePositionManager is
                 FixedPoint128.Q128
             )
         );
+        
         position.tokensOwed1 += uint128(
             FullMath.mulDiv(
                 feeGrowthInside1LastX128 - position.feeGrowthInside1LastX128,
@@ -262,6 +264,14 @@ contract NonfungiblePositionManager is
     }
 
     /// @inheritdoc INonfungiblePositionManager
+    /// @dev struct DecreaseLiquidityParams {
+    /// @dev   uint256 tokenId;
+    /// @dev    uint128 liquidity;
+    /// @dev    uint256 amount0Min;
+    /// @dev    uint256 amount1Min;
+    /// @dev   uint256 deadline;
+    /// @dev}
+    ///
     function decreaseLiquidity(DecreaseLiquidityParams calldata params)
         external
         payable
@@ -276,10 +286,13 @@ contract NonfungiblePositionManager is
         uint128 positionLiquidity = position.liquidity;
         require(positionLiquidity >= params.liquidity);
 
-        PoolAddress.PoolKey memory poolKey = _poolIdToPoolKey[position.poolId];
+        PoolAddress.PoolKey memory poolKey = _poolIdToPoolKey[position.poolId]; // poolId是params.tokenId吗？
+
+        //调用pool合约的burn()方法
         IUniswapV3Pool pool = IUniswapV3Pool(PoolAddress.computeAddress(factory, poolKey));
         (amount0, amount1) = pool.burn(position.tickLower, position.tickUpper, params.liquidity);
 
+        //校验pool.burn返回参数
         require(amount0 >= params.amount0Min && amount1 >= params.amount1Min, 'Price slippage check');
 
         bytes32 positionKey = PositionKey.compute(address(this), position.tickLower, position.tickUpper);
@@ -314,6 +327,15 @@ contract NonfungiblePositionManager is
     }
 
     /// @inheritdoc INonfungiblePositionManager
+    /**
+     struct CollectParams {
+        uint256 tokenId;
+        address recipient;
+        uint128 amount0Max;
+        uint128 amount1Max;
+    }
+     * 
+     */
     function collect(CollectParams calldata params)
         external
         payable
@@ -325,15 +347,45 @@ contract NonfungiblePositionManager is
         // allow collecting to the nft position manager address with address 0
         address recipient = params.recipient == address(0) ? address(this) : params.recipient;
 
+        //先查找Position
         Position storage position = _positions[params.tokenId];
 
+        //再查找PoolAddress.PoolKey
+        /**
+         * struct PoolKey {
+           address token0;
+           address token1;
+           uint24 fee;
+         }
+         */
         PoolAddress.PoolKey memory poolKey = _poolIdToPoolKey[position.poolId];
 
+        //计算Pool合约地址
+        /**
+         * 
+         function computeAddress(address factory, PoolKey memory key) internal pure returns (address pool) {
+            require(key.token0 < key.token1);
+            pool = address(
+                uint256(
+                    keccak256(
+                        abi.encodePacked(
+                            hex'ff',
+                            factory,
+                            keccak256(abi.encode(key.token0, key.token1, key.fee)),
+                            POOL_INIT_CODE_HASH
+                        )
+                    )
+                )
+            );
+         }
+         */
         IUniswapV3Pool pool = IUniswapV3Pool(PoolAddress.computeAddress(factory, poolKey));
 
+        //未收集的token
         (uint128 tokensOwed0, uint128 tokensOwed1) = (position.tokensOwed0, position.tokensOwed1);
 
         // trigger an update of the position fees owed and fee growth snapshots if it has any liquidity
+        //更新仓位手续费和增长快照
         if (position.liquidity > 0) {
             pool.burn(position.tickLower, position.tickUpper, 0);
             (, uint256 feeGrowthInside0LastX128, uint256 feeGrowthInside1LastX128, , ) =

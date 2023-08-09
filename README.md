@@ -25,6 +25,7 @@ V3版本
   - 添加流动性
   - 删除流动性
 
+
 兑换
  - 计算兑换价格
  - 执行兑换
@@ -222,8 +223,16 @@ p(i) = pow(1.0001,i)
 在合约内，v3 会保存所有用户的流动性，代码内称作 Position，提供流动性的调用流程如下
 ![添加流动性](https://liaoph.com/img/in-post/uniswap-v3/add-liquidity.png)
 
+**时序图**
+```sequence
+    User Interface ->>MultiCall: multicall()
+    MultiCall.multicall ->>NonfungiblePositionManager: mint()
+    NonfungiblePositionManager-->>UniswapV3Pool: contract!
+    NonfungiblePositionManager-->>LiquidityManagement: addLiquidity:
+    NonfungiblePositionManager-->MultiCall: Position 
+```
 
-
+**添加流动性结构体参数**
 ```
 struct AddLiquidityParams {
     address token0;     // token0 的地址
